@@ -12,3 +12,5 @@ if md == '0':
         print(*ai.ask(ask_data))
 elif md == '1':
     ai.teach_cycle()
+
+#
