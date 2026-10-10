@@ -80,9 +80,9 @@ class AI:
         values: list[float] = []
         for i in self.dataset:
             if len(values):
-                values.append[self.ask(i)[0] + values[len(values)-1]]
+                values.append(self.ask(i)[0] + values[len(values)-1])
             else:
-                values.append[self.ask(i)[0]]
+                values.append(self.ask(i)[0])
         self.ax[0, 0].cla()
         self.ax[0, 0].set_title('MSE')
         self.ax[0, 0].plot(rl(self.effeciency), self.effeciency, color='#00ff00')
