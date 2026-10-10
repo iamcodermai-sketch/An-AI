@@ -37,7 +37,7 @@ class AI:
         for layerUID in rl(layers)[:-1]:
             for fromneuID in range(layers[layerUID]):
                 for toneuID in range(layers[layerUID+1]):
-                    self._cons.append(AI.CONNECTION(uniform(-1, 1), (fromneuID+sum(layers[:layerUID]), toneuID+sum(layers[:layerUID+1]))))
+                    self._cons.append(AI.CONNECTION(uniform(-0.01, 0.01), (fromneuID+sum(layers[:layerUID]), toneuID+sum(layers[:layerUID+1]))))
 
     def ask(self, data: list[float]):
         self.prepare_ask(data)
