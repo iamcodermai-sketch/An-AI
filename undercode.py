@@ -65,10 +65,11 @@ class AI:
 
     def c_mse(self):
         errs = []
-        errs2 = []
-        for data in self.dataset:
-            errs.append((self.func(data[0]) - self.ask(data)[0])**2)
-            errs2.append(self.func(data[0]) - self.ask(data)[0])
+        for datai in rl(self.dataset):
+            if datai > 0:
+                errs.append((-(self.func(self.dataset[datai-1][0]) - self.func(self.dataset[datai][0])) - self.ask(self.dataset[datai])[0])**2)
+            else:
+                errs.append((-(0 - self.func(self.dataset[datai][0])) - self.ask(self.dataset[datai])[0])**2)
         self.mse = sum(errs)
         self.effeciency.append(self.mse)
         if len(self.effeciency) > 100:
