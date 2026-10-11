@@ -26,18 +26,18 @@ class AI:
         self._oUIDs: list[int] = []
         self._neus: list[AI.NEURON] = []
         self._cons: list[AI.CONNECTION] = []
-        self.dataset: list[list[float]] = [[math.pi * (i-500) / 1000] for i in range(2000)]
+        self.dataset: list[list[float]] = [[math.pi * (i-1000) / 1000] for i in range(2000)]
 
         for layerUID in rl(layers):
             for row in range(layers[layerUID]):
-                self._neus.append(AI.NEURON(uniform(-1, 1)))
+                self._neus.append(AI.NEURON(uniform(-0.001, 0.001)))
                 if layerUID == len(layers)-1:
                     self._oUIDs.append(len(self._neus)-1)
 
         for layerUID in rl(layers)[:-1]:
             for fromneuID in range(layers[layerUID]):
                 for toneuID in range(layers[layerUID+1]):
-                    self._cons.append(AI.CONNECTION(uniform(-0.01, 0.01), (fromneuID+sum(layers[:layerUID]), toneuID+sum(layers[:layerUID+1]))))
+                    self._cons.append(AI.CONNECTION(uniform(-0.001, 0.001), (fromneuID+sum(layers[:layerUID]), toneuID+sum(layers[:layerUID+1]))))
 
     def ask(self, data: list[float]):
         self.prepare_ask(data)
@@ -48,51 +48,55 @@ class AI:
         for n in self._neus:
             n.value = n.bias
         for j in data:
-            self._neus[i].value = sig(j)
+            self._neus[i].value = j
             i+=1
 
     def solve(self):
         for conn in self._cons:
-            if self._neus[conn.neurons[0]].value > self._neus[conn.neurons[1]].value:
-                f = conn.neurons[0]
-                t = conn.neurons[1]
-            else:
-                f = conn.neurons[1]
-                t = conn.neurons[0]
+            #if self._neus[conn.neurons[0]].value > self._neus[conn.neurons[1]].value:
+            f = conn.neurons[0]
+            t = conn.neurons[1]
+            #else:
+            #    f = conn.neurons[1]
+            #    t = conn.neurons[0]
 
             self._neus[t].value += sig(self._neus[f].value) * conn.weight
-        return [math.floor(self._neus[i].value*100)/100 for i in self._oUIDs]
+        return [self._neus[i].value for i in self._oUIDs]
 
     def c_mse(self):
         errs = []
         for datai in rl(self.dataset):
-            if datai > 0:
+            if datai != 0:
                 errs.append((-(self.func(self.dataset[datai-1][0]) - self.func(self.dataset[datai][0])) - self.ask(self.dataset[datai])[0])**2)
-            else:
-                errs.append((-(0 - self.func(self.dataset[datai][0])) - self.ask(self.dataset[datai])[0])**2)
-        self.mse = sum(errs)
-        self.effeciency.append(self.mse)
-        if len(self.effeciency) > 100:
-            self.effeciency = self.effeciency[len(self.effeciency)-100:]
+            # else:
+            #     errs.append((-(0 - self.func(self.dataset[datai][0])) - self.ask(self.dataset[datai])[0])**2)
+        self.mse = math.sqrt(sum(errs) / (len(self.dataset)-1))
         return self.mse
 
     def show(self):
-        values: list[float] = []
-        for i in self.dataset:
-            if len(values):
-                values.append(self.ask(i)[0] + values[len(values)-1])
-            else:
-                values.append(self.ask(i)[0])
         self.ax[0, 0].cla()
         self.ax[0, 0].set_title('MSE')
         self.ax[0, 0].plot(rl(self.effeciency), self.effeciency, color='#00ff00')
+        values: list[float] = []
+        for i in self.dataset:
+            values.append(self.ask(i)[0])
         self.ax[0, 1].cla()
         self.ax[0, 1].set_title('Predict')
         self.ax[0, 1].plot(rl(values), values, color='#0000ff')
+
         rvalues: list[float] = [self.func(i[0]) for i in self.dataset]
         self.ax[1, 0].cla()
         self.ax[1, 0].set_title('Original')
         self.ax[1, 0].plot(rl(rvalues), rvalues, color='#ff0000')
+        fvalues: list[float] = []
+        for i in self.dataset:
+            if len(fvalues):
+                fvalues.append(self.ask(i)[0] + fvalues[len(fvalues)-1])
+            else:
+                fvalues.append(0)
+        self.ax[1, 1].cla()
+        self.ax[1, 1].set_title('Integral')
+        self.ax[1, 1].plot(rl(fvalues), fvalues, color='#ff0000')
 
         plt.show(block=0)
         plt.pause(0.0001)
@@ -102,21 +106,27 @@ class AI:
         wigb = randint(0, 1)
         if wigb == 0:
             target = randint(0, len(self._neus)-1)
-            delta = uniform(-1, 1)
+            delta = uniform(-0.001, 0.001)
 
             self._neus[target].bias += delta
         else:
             target = randint(0, len(self._cons)-1)
-            delta = uniform(-1, 1)
+            delta = uniform(-0.001, 0.001)
 
             self._cons[target].weight += delta
-        if self.c_mse() > self._old_mse:
+
+        if self.c_mse() < self._old_mse:
+            self.effeciency.append(self.mse)
+            if len(self.effeciency) > 100:
+                self.effeciency = self.effeciency[len(self.effeciency)-100:]
+            self.show()
+        else:
             if wigb == 0:
                 self._neus[target].bias -= delta
             else:
                 self._cons[target].weight -= delta
-            self.c_mse()
-        self.show()
+            self.mse = self._old_mse
+        # self.show()
 
     def teach_cycle(self):
         plt.ion()
